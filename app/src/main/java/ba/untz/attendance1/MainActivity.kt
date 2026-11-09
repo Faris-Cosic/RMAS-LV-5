@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -78,13 +80,15 @@ fun StudentName(name: String) {
 @Composable
 fun CheckInCard(
     checkIn: CheckIn,
+    allCheckIns : List<CheckIn>,
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
+
     Column(modifier = modifier.clickable { expanded = !expanded }) {
         CheckInRow(checkIn)
         if (expanded) {
-            val stud = sampleCheckIns.filter { it.student == checkIn.student }
+            val stud = allCheckIns.filter { it.student == checkIn.student }
 
             Column(modifier = Modifier.padding(start = 64.dp, top = 8.dp)) {
                 stud.forEach {
@@ -206,23 +210,35 @@ fun WindowControls(
 
 @Composable
 fun ProfessorScreen(modifier: Modifier = Modifier) {
-    var openWindow: Window? by rememberSaveable { mutableStateOf(null) }
+    var openWindow by rememberSaveable { mutableStateOf<Window?>(null) }
+    var checkIns by remember {mutableStateOf(sampleCheckIns)}
 
-    Column(modifier = modifier.padding(16.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
         WindowControls(openWindow = openWindow, onOpen = { openWindow = it })
         Spacer(Modifier.height(8.dp))
 
         if (openWindow == null) {
             Text("Open a window to see check ins")
         } else {
-            val visible = sampleCheckIns.filter { it.window == openWindow }
+            val visible = checkIns.filter { it.window == openWindow }
             AttendanceSummary(visible)
             Spacer(Modifier.height(8.dp))
             Column {
                 visible.forEach { checkIn ->
-                    CheckInCard(checkIn)
+                    CheckInCard(checkIn, checkIns)
                 }
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CheckInCardPreview(){
+    CheckInCard(sampleCheckIns[0], allCheckIns = sampleCheckIns)
 }
