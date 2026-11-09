@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -213,6 +214,9 @@ fun ProfessorScreen(modifier: Modifier = Modifier) {
     var openWindow by rememberSaveable { mutableStateOf<Window?>(null) }
     var checkIns by remember {mutableStateOf(sampleCheckIns)}
 
+    var query by rememberSaveable {mutableStateOf<String>("")}
+
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -225,10 +229,14 @@ fun ProfessorScreen(modifier: Modifier = Modifier) {
         if (openWindow == null) {
             Text("Open a window to see check ins")
         } else {
-            val visible = checkIns.filter { it.window == openWindow }
+            val visible = checkIns.filter { it.window == openWindow && it.student.name.contains(query, ignoreCase = true)}
             AttendanceSummary(visible)
+            SearchField(query, {query = it})
             Spacer(Modifier.height(8.dp))
             Column {
+                if(visible.isEmpty()){
+                    Text("No check-ins match the filter.")
+                }
                 visible.forEach { checkIn ->
                     CheckInCard(checkIn, checkIns)
                 }
@@ -237,8 +245,26 @@ fun ProfessorScreen(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun SearchField(query : String, onQueryChange: (String) -> Unit, modifier : Modifier = Modifier) {
+    Row(modifier = Modifier.fillMaxWidth()){
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            label = {Text("Search student")},
+            placeholder = {Text("e.g. Amir")}
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun CheckInCardPreview(){
     CheckInCard(sampleCheckIns[0], allCheckIns = sampleCheckIns)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SearchFieldPreview(){
+    SearchField("ami", onQueryChange = {})
 }
