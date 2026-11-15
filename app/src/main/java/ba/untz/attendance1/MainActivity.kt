@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -52,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ba.untz.attendance1.CheckInStatus.Absent
 import ba.untz.attendance1.ui.theme.Attendance1Theme
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -309,6 +311,40 @@ fun StatusPicker(
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun LateMinutesSlider(minutes : Int, onMinutesChange : (Int) -> Unit, enabled : Boolean, modifier : Modifier = Modifier){
+    Column(modifier = modifier){
+        Text(text = "Late: ${if (enabled) minutes else "-"} min")
+        Slider(
+            value = minutes.toFloat(),
+            onValueChange = {it -> onMinutesChange(it.roundToInt())},
+            enabled = enabled,
+            valueRange = 5f..60f,
+            steps = 10
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LateMinutesSliderEnabledPreview() {
+    Attendance1Theme {
+        Surface {
+            LateMinutesSlider(minutes = 15, onMinutesChange = {}, enabled = true)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LateMinutesSliderDisabledPreview() {
+    Attendance1Theme {
+        Surface {
+            LateMinutesSlider(minutes = 15, onMinutesChange = {}, enabled = false)
         }
     }
 }
