@@ -28,6 +28,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -38,6 +39,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -252,6 +254,14 @@ fun ProfessorScreen(modifier: Modifier = Modifier) {
                     CheckInCard(checkIn, checkIns)
                 }
             }
+
+            openWindow?.let {w ->
+                ManualCheckInForm(
+                    window = w,
+                    existing = checkIns,
+                    onSave = {checkIns = checkIns + it}
+                )
+            }
         }
     }
 }
@@ -328,6 +338,121 @@ fun LateMinutesSlider(minutes : Int, onMinutesChange : (Int) -> Unit, enabled : 
         )
     }
 }
+
+@Composable
+fun ManualCheckInForm(window : Window, existing : List<CheckIn>, onSave: (CheckIn) -> Unit, modifier : Modifier = Modifier){
+    var index by rememberSaveable {mutableStateOf("")}
+    var name by rememberSaveable {mutableStateOf("")}
+    var selectedStatus by rememberSaveable {mutableStateOf(StatusKind.ON_TIME)}
+    var minutes by rememberSaveable { mutableIntStateOf(15) }
+    var confirmed by rememberSaveable {mutableStateOf(false)}
+
+    val indexValid = Regex("IB\\d{3}").matches(index)
+    val nameValid = name.trim().contains(' ')
+    val canSave = indexValid && nameValid && confirmed
+
+
+    Column(modifier = modifier){
+    Text(text = "Manual check-in · ${window.label}", style = MaterialTheme.typography.titleMedium)
+    OutlinedTextField(
+        value = index,
+        onValueChange = {index = it.uppercase()},
+        label = {Text("index")},
+        isError = (!indexValid && index.isNotEmpty()),
+        supportingText = {
+            if (index.isNotEmpty() && !indexValid) Text("Format: IB + 3 digits")
+        },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth()
+    )
+    OutlinedTextField(
+        value = name,
+        onValueChange = {name = it},
+        label = {Text("Full name")},
+        isError = name.isNotEmpty() && !nameValid,
+        supportingText = {
+            if (name.isNotEmpty() && !nameValid) Text("Enter first and last name")
+        },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth()
+    )
+    StatusPicker(
+        selected = selectedStatus,
+        onSelect = {selectedStatus = it},
+    )
+    LateMinutesSlider(
+        minutes = minutes,
+        onMinutesChange = {minutes = it},
+        enabled = (selectedStatus == StatusKind.LATE),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().toggleable(
+            value = confirmed,
+            role = Role.Checkbox,
+            onValueChange = {confirmed = it}
+        ),
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Checkbox(
+            checked = confirmed,
+            onCheckedChange = null
+        )
+        Text("Confirmed in person", modifier = Modifier.padding(start = 8.dp))
+    }
+
+    Button(
+        onClick = {
+            val start = when(window) {
+                Window.START -> 480
+                Window.MIDDLE -> 600
+                Window.END -> 690
+            }
+            val status = when (selectedStatus){
+                StatusKind.ON_TIME -> CheckInStatus.OnTime
+                StatusKind.LATE -> CheckInStatus.Late(minutes)
+                StatusKind.ABSENT -> CheckInStatus.Absent
+            }
+            val time = when (status){
+                is CheckInStatus.OnTime -> start
+                is CheckInStatus.Late -> start + status.minutes
+                is CheckInStatus.Absent -> 0
+            }
+            onSave(
+                CheckIn(
+                    student = Student(index, name.trim()),
+                    window = window,
+                    status = status,
+                    minutes = time
+                )
+            )
+            index = ""
+            name = ""
+            selectedStatus = StatusKind.ON_TIME
+            minutes = 5
+            confirmed = false
+        },
+        enabled = canSave
+    ){
+        Text ("Add check-in")
+    }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ManualCheckInFormPreview() {
+    Attendance1Theme {
+        Surface {
+            ManualCheckInForm(
+                window = Window.MIDDLE,
+                existing = sampleCheckIns,
+                onSave = {},
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
