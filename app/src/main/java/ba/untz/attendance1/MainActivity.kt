@@ -22,12 +22,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -270,6 +273,53 @@ fun LateOnlySwitch(onlyLate : Boolean, onlyLateChange : (Boolean) -> Unit, modif
     }), verticalAlignment = Alignment.CenterVertically){
         Text("Only late", Modifier.weight(1f))
         Switch(checked = onlyLate, onCheckedChange = null)
+    }
+}
+
+enum class StatusKind(val label : String){
+    ON_TIME("On time"),
+    LATE("Late"),
+    ABSENT("Absent")
+}
+
+@Composable
+fun StatusPicker(
+    selected : StatusKind,
+    onSelect : (StatusKind) -> Unit,
+    modifier : Modifier = Modifier
+){
+    Column(modifier = modifier.selectableGroup()){
+        StatusKind.entries.forEach{kind ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = kind == selected,
+                        onClick = {onSelect(kind)},
+                        role = Role.RadioButton
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                RadioButton(
+                    selected = kind == selected,
+                    onClick = null
+                )
+                Text(
+                    text = kind.label,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun StatusPickerPreview() {
+    Attendance1Theme {
+        Surface {
+            StatusPicker(selected = StatusKind.LATE, onSelect = {})
+        }
     }
 }
 
